@@ -1,23 +1,22 @@
 ---
-
 - hosts: all
   become: true
   pre_tasks:
 
   - name: update repository index (CentOS)
     tags: always
-    dnf:
+    yum:
+      name: '*'
+      state: latest
       update_cache: yes
     changed_when: false
     when: ansible_distribution == "CentOS"
-
-  - name: install update (Ubuntu)
+  - name: install updates (Ubuntu)
     tags: always
     apt:
       update_cache: yes
     changed_when: false
     when: ansible_distribution == "Ubuntu"
-
 
 - hosts: ubuntu_server
   become: true

@@ -1,116 +1,68 @@
+---
+- name: installation of nagios dependencies and libraries
+  tags:
+    - dependencies
+    - libraries
+  yum:
+    name:
+      - gcc
+      - glibc
+      - glibc-common
+      - perl
+      - httpd
+      - php
+      - wget
+      - gd
+      - gd-devel
+      - openssl-devel
+      - gcc
+      - glibc
+      - glibc-common
+      - make
+      - gettext
+      - automake
+      - autoconf
+      - wget
+      - openssl-devel
+      - net-snmp
+      - net-snmp-utils
+      - python
+      - python2-pip
+      - python3-pip
+    state: latest
 
-  - name: install unzip
-    package:
-      name: unzip
+- name: install passlib package
+  pip:
+    name: passlib
 
-  - name: Download Nagios (CentOS)
-    unarchive:
-      src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.5.tar.gz
-      dest: /usr/local/bin
-      remote_src: yes
-      mode: 0777
-      owner: root
-      group: root
+- name: assign nagios path directory
+  file:
+    path: ~/nagios
+    state: directory
 
-  - name: Download Nagios Plugins (CentOS)
-    unarchive:
-      src: https://github.com/nagios-plugins/nagios-plugins/archive/release-2.3.3.tar.gz
-      dest: /usr/local/bin
-      remote_src: yes
-      mode: 0777
-      owner: root
-      group: root
+- name: download nagios
+  unarchive:
+    src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.6.tar.gz
+    dest: ~/nagios
+    remote_src: yes
+    mode: 0777
+    owner: root
+    group: root
 
-  - name: Download Nagios Packages (CentOS)
-    tags: centos, nagios, packages
-    dnf:
-      name:
-        - gcc
-        - glibc
-        - glibc-common
-        - make
-        - gettext
-        - automake
-        - autoconf
-        - openssl-devel
-        - net-snmp
-        - net-snmp-utils
-        - epel-release
-        - wget
-        - unzip
-        - httpd
-        - php
-        - gd
-        - gd-devel
-        - perl
-        - postfix
-        - curl
-        - openssl
-        - php-gd
-        - autoconf
-        - automake
-        - bc
-        - gawk
-        - gcc
-        - gd
-        - gd-devel
-        - gettext
-        - glibc
-        - glibc-common
-        - httpd
-        - make
-        - net-snmp
-        - net-snmp-utils
-        - openssl
-        - openssl-devel
-        - perl
-        - php-gd
-        - php
-        - python3
-        - python3-pip
-        - unzip
-        - wget
-      state: latest
-    when: ansible_distribution == "CentOS"
+- name: add users to nagios
+  community.general.htpasswd:
+    path: /usr/local/nagios/etc/htpasswd.users
+    name: roseann
+    password: roseann
 
+- name: start and enable nagios
+  service:
+    name: nagios
+    state: restarted
+    enabled: true
 
-  - name: Adding Groups (CentOS)
-    tags: group
-    shell: |
-      cd /usr/local/bin/nagioscore-*
-      ./configure
-      make all
-      make install-group-users
-      usermod -a -G nagios apache
-      make install
-      make install-daemoninit
-      make install-commandmode
-      make install-config
-      make install-webconf
-
-  - name: Compiling Plugins (CentOS)
-    shell: |
-      cd /usr/local/bin/nagios-plugins*
-      ./tools/setup
-      ./configure
-      make
-      make install
-
-  - name: Restarting Apache (CentOS)
-    tags: apache
-    service:
-      name: httpd
-      state: restarted
-      enabled: true
-
-  - name: Download passlib
-    pip:
-      name: passlib
-      state: latest
-    when: ansible_distribution == "CentOS"
-
-  - name: Adding Nagios User (CentOS)
-    community.general.htpasswd:
-      path: /usr/local/nagios/etc/htpasswd.users
-      name: roseann
-      password: roseann
+- name: start and enable httpd
+  service:
+    name: httpd
+    state: restarted
+    enabled: true
